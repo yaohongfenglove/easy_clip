@@ -1,0 +1,19 @@
+{
+    "environment": "debug",
+    "SUPPORTED_VOICES": {
+        "1": "zh-CN-XiaoxiaoNeural",
+        "2": "zh-CN-XiaoyiNeural",
+        "3": "zh-CN-YunjianNeural",
+        "4": "zh-CN-YunxiNeural",
+        "5": "zh-CN-YunxiaNeural",
+        "6": "zh-CN-YunyangNeural",
+        "7": "zh-CN-liaoning-XiaobeiNeural",
+        "8": "zh-CN-shaanxi-XiaoniNeural",
+        "9": "zh-HK-HiuGaaiNeural",
+        "10": "zh-HK-HiuMaanNeural",
+        "11": "zh-HK-WanLungNeural",
+        "12": "zh-TW-HsiaoChenNeural",
+        "13": "zh-TW-HsiaoYuNeural",
+        "14": "zh-TW-YunJheNeural"
+    }
+}

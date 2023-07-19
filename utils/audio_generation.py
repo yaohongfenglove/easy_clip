@@ -1,11 +1,22 @@
 import asyncio
 import re
 import textwrap
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import edge_tts
 
 from conf.config import config, logger
+
+
+class Subtitle(object):
+    def __init__(self, text: str, metadata: Dict = None):
+        """
+        初始化字幕类，带元数据
+        :param text: 字幕文本
+        :param metadata: 元数据，例如{"media_path": "...", ...}
+        """
+        self.text = text
+        self.metadata = metadata
 
 
 def vtt_file_to_subtitles(file_path: str):
@@ -148,6 +159,21 @@ def sync_generate_audios(text_list: List, audio_output_path_list: List, subtitle
             logger.info(f"生成路径：{result}")
     finally:
         loop.close()
+
+
+def text2audio(text: str, audio_output_path: str, subtitle_output_path: str) -> None:
+    """
+    将文本转为音频
+    :param text: 待转化的文本
+    :param audio_output_path: 音频输出路径
+    :param subtitle_output_path: srt字幕输出路径
+    :return:
+    """
+    sync_generate_audios(
+        text_list=[text, ],
+        audio_output_path_list=[audio_output_path, ],
+        subtitle_output_path_list=[subtitle_output_path, ]
+    )
 
 
 def main():

@@ -25,6 +25,12 @@ def load_config():
 config = load_config()
 
 
+# 如果输出文件夹不存在，则创建
+output_dir_path = os.path.join(BASE_DIR, "output")
+if not os.path.isdir(output_dir_path):
+    os.makedirs(output_dir_path)
+
+
 # ########## 日志配置
 # 如果日志文件夹不存在，则创建
 log_dir_path = os.path.join(BASE_DIR, "logs")

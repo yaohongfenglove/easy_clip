@@ -15,5 +15,6 @@
         "12": "zh-TW-HsiaoChenNeural",
         "13": "zh-TW-HsiaoYuNeural",
         "14": "zh-TW-YunJheNeural"
-    }
+    },
+    "media_root_path": "D:/data/program/easy_clip/media"
 }

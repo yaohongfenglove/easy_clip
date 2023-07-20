@@ -63,7 +63,7 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     final_clip = CompositeVideoClip([background_clip, video_clip.set_position("center")])
 
     # 保存合成的视频
-    final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4")
+    final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4", threads=os.cpu_count())
     final_clip.close()
 
 
@@ -148,7 +148,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     video_clip = video_clip.set_audio(audio_clip)
 
     # 保存合成的视频
-    video_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4")
+    video_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4", threads=os.cpu_count())
     video_clip.close()
 
     return video_clip

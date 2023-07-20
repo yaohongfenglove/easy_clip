@@ -1,3 +1,4 @@
+import math
 import os
 import random
 from typing import List
@@ -54,7 +55,7 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
 
     video_clip = video_clip.without_audio()
     video_clip = video_clip.set_audio(audio_clip)
-    video_clip = resize(video_clip, width=1080, height=720)
+    video_clip = resize(video_clip, width=1080, height=math.floor(1080/(1920/1080)))
 
     # 加封面
     background_clip = ImageClip(cover_path).set_duration(video_clip.duration)
@@ -63,7 +64,8 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     final_clip = CompositeVideoClip([background_clip, video_clip.set_position("center")])
 
     # 保存合成的视频
-    final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4", threads=os.cpu_count())
+    final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
+                               bitrate='10000k', threads=os.cpu_count())
     final_clip.close()
 
 
@@ -148,7 +150,8 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     video_clip = video_clip.set_audio(audio_clip)
 
     # 保存合成的视频
-    video_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4", threads=os.cpu_count())
+    video_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
+                               bitrate='10000k', threads=os.cpu_count())
     video_clip.close()
 
     return video_clip

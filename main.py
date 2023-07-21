@@ -37,11 +37,17 @@ def main():
     rows = pandas.read_excel(os.path.join(BASE_DIR, '视频脚本文件.xlsx'), header=0)
     rows = list(rows.values)
 
-    subtitles = [Subtitle(text=row[0], metadata={"media_path": row[1], "cover_path": row[2]}) for row in rows]
+    subtitles = [Subtitle(text=row[0], metadata={"media_path": row[1]}) for row in rows]
 
     # 封面路径
-    cover_path = os.path.join(config["media_root_path"], subtitles[0].metadata["cover_path"])
-    cover_path = random.choice([os.path.join(cover_path, filename) for filename in os.listdir(cover_path) if not filename.startswith('.')])
+    cover_path = os.path.join(config["media_root_path"], rows[0][2])
+    cover_path = random.choice(
+        [os.path.join(cover_path, filename) for filename in os.listdir(cover_path) if not filename.startswith('.')])
+
+    # BGM路径
+    bgm_path = os.path.join(config["media_root_path"], rows[0][3])
+    bgm_path = random.choice(
+        [os.path.join(bgm_path, filename) for filename in os.listdir(bgm_path) if not filename.startswith('.')])
 
     subtitles_list = get_subtitles_list(subtitles)
 

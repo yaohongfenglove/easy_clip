@@ -94,9 +94,11 @@ def combining_video_within_cross_fade(clips: List[VideoClip], cross_fade_duratio
     return final_clip
 
 
-def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, video_output_path: str) -> VideoClip:
+def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, video_output_path: str,
+                   cross_fade_duration: int = 0) -> VideoClip:
     """
     生成视频
+    :param cross_fade_duration: 转场时间
     :param subtitle: 字幕
     :param audio_path:
     :param subtitle_path:
@@ -106,61 +108,85 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
     # 获取视频画面素材
     media_path = os.path.join(config["media_root_path"], subtitle.metadata["media_path"])
-    medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path) if not filename.startswith('.')]
+    medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path)]
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
     video_current_duration = 0  # 视频的当前时长
     video_clips: List[ImageClip, VideoFileClip] = list()
 
+    i = 1
     while medias:
         media_path = random.choice(medias)
         medias.remove(media_path)
 
         media_type = get_file_type(file_path=media_path)
+        video_left_duration = video_final_duration - video_current_duration  # 时间轴剩余时长
+
         if media_type == "image":
-            image_clip = ImageClip(media_path).set_duration(3)
+            if i == 1:
+                image_duration = random.uniform(1, 1.5)
+            else:
+                image_duration = random.uniform(1+cross_fade_duration, 1.5+cross_fade_duration)
+            image_clip = ImageClip(media_path).set_duration(min(video_left_duration, image_duration))
             image_clip = resize(clip=image_clip, width=1920, height=1080)
-            video_clip = image_clip
+
+            video_clips.append(image_clip)
+            i += 1
+            video_current_duration += image_clip.duration
+
+            logger.info(f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+            if video_current_duration == video_final_duration:
+                break
         elif media_type == "video":
-            video_clip = VideoFileClip(media_path).subclip(0, 3)
-            video_clip = resize(clip=video_clip, width=1920, height=1080)
+            video_clip = VideoFileClip(media_path)
+            if i == 1:
+                if video_clip.duration <= video_left_duration:
+                    pass
+                else:
+                    t_start = random.uniform(0, video_clip.duration - video_left_duration)  # t_start是视频的开始时间点
+                    video_clip = video_clip.subclip(t_start, t_start + video_left_duration)
+                video_clip = resize(clip=video_clip, width=1920, height=1080)
+
+                video_clips.append(video_clip)
+                i += 1
+                video_current_duration = video_current_duration + video_clip.duration
+
+                logger.info(
+                    f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+                if video_current_duration == video_final_duration:
+                    break
+            else:
+                if video_clip.duration <= video_left_duration:
+                    video_clip = resize(clip=video_clip, width=1920, height=1080)
+
+                    video_clips.append(video_clip)
+                    i += 1
+                    video_current_duration = video_current_duration + video_clip.duration - cross_fade_duration
+
+                    logger.info(
+                        f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+                    if video_current_duration == video_final_duration:
+                        break
+                else:
+                    t_start = random.uniform(0, video_clip.duration - (video_left_duration + cross_fade_duration))
+                    video_clip = video_clip.subclip(t_start, t_start + (video_left_duration + cross_fade_duration))
+                    video_clip = resize(clip=video_clip, width=1920, height=1080)
+
+                    video_clips.append(video_clip)
+                    i += 1
+                    video_current_duration = video_current_duration + video_clip.duration
+
+                    logger.info(
+                        f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+                    if video_current_duration == video_final_duration:
+                        break
+                    else:
+                        continue
         else:
             raise ValueError(f"不支持该类型的媒体文件：{media_path}")
 
-        video_left_duration = video_final_duration - (video_current_duration + video_clip.duration)  # 时间轴剩余时长
-        if video_left_duration > 2:  # 没有超时间轴，且时间轴还剩很长。直接添加
-            duration = video_clip.duration
-            video_current_duration += duration
-            video_clips.append(video_clip)
-        elif 0 <= video_left_duration < 2:  # 没有超时间轴，但时间轴只剩一点点了。是图片则拉长一点，是视频则继续
-            if isinstance(video_clip, ImageClip):
-                duration = video_clip.duration + abs(video_left_duration)
-                video_clip.set_duration(duration)
-                video_clip = video_clip.set_duration(duration)
-                video_current_duration += duration
-                video_clips.append(video_clip)
-            elif isinstance(video_clip, VideoFileClip):
-                continue
-        elif -2 < video_left_duration < 0:  # 超时间轴不多。截断一点
-            duration = video_clip.duration - abs(video_left_duration)
-            if isinstance(video_clip, ImageClip):
-                video_clip.set_duration(duration)
-            elif isinstance(video_clip, VideoFileClip):
-                video_clip = video_clip.subclip(0, duration)
-            video_current_duration += duration
-            video_clips.append(video_clip)
-        else:  # 超时间轴太多。继续
-            continue
-        logger.info(f"当前时长：{video_current_duration} 最终时长：{video_final_duration}")
-
-        if video_current_duration == video_final_duration:
-            break
-
-    if video_current_duration < video_final_duration:
-        raise ValueError(f"素材不够")
-
     # 合成视频
-    video_clip = concatenate_videoclips(video_clips, method="compose")
+    video_clip = combining_video_within_cross_fade(video_clips, cross_fade_duration=cross_fade_duration)
 
     # 添加字幕
     subtitles = SubtitlesClip(
@@ -176,7 +202,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
     # 保存合成的视频
     video_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
-                               bitrate='10000k', threads=os.cpu_count(), audio_bufsize=1000)
+                               bitrate='10000k', threads=os.cpu_count())
     video_clip.close()
 
     return video_clip

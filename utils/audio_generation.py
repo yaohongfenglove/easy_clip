@@ -1,4 +1,5 @@
 import asyncio
+import random
 import re
 import textwrap
 from typing import List, Tuple, Dict
@@ -118,7 +119,9 @@ async def generate_audio(text: str, audio_output_path: str, subtitle_output_path
     :param subtitle_output_path: 字幕输出的绝对路径，/xxx/xxx/xxx.srt
     :return:
     """
-    communicate = edge_tts.Communicate(text,  config["SUPPORTED_VOICES"]["1"])
+    subtitle_audio = random.choice(list(config["SUPPORTED_VOICES"].keys()))  # 随机选一个字幕配音
+    communicate = edge_tts.Communicate(text, config["SUPPORTED_VOICES"][subtitle_audio])
+
     subtitle_maker = edge_tts.SubMaker()
     with open(audio_output_path, "wb") as file:
         async for chunk in communicate.stream():

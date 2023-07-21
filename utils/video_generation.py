@@ -27,7 +27,7 @@ def get_file_type(file_path: str) -> str:
     image_extensions = ['.jpg', '.jpeg', '.png', '.gif']
     video_extensions = ['.mp4', '.avi', '.mov']
 
-    file_extension = os.path.splitext(file_path)[-1]
+    file_extension = os.path.splitext(file_path)[-1].lower()
 
     if file_extension in image_extensions:
         return 'image'
@@ -106,7 +106,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
     # 获取视频画面素材
     media_path = os.path.join(config["media_root_path"], subtitle.metadata["media_path"])
-    medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path)]
+    medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path) if not filename.startswith('.')]
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
     video_current_duration = 0  # 视频的当前时长

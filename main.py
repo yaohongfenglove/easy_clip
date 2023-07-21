@@ -41,7 +41,7 @@ def main():
 
     # 封面路径
     cover_path = os.path.join(config["media_root_path"], subtitles[0].metadata["cover_path"])
-    cover_path = random.choice([os.path.join(cover_path, filename) for filename in os.listdir(cover_path)])
+    cover_path = random.choice([os.path.join(cover_path, filename) for filename in os.listdir(cover_path) if not filename.startswith('.')])
 
     subtitles_list = get_subtitles_list(subtitles)
 

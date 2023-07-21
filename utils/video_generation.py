@@ -108,7 +108,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
     # 获取视频画面素材
     media_path = os.path.join(config["media_root_path"], subtitle.metadata["media_path"])
-    medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path)]
+    medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path) if not filename.startswith('.')]
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
     video_current_duration = 0  # 视频的当前时长
@@ -191,9 +191,10 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     # 添加字幕
     subtitles = SubtitlesClip(
         subtitle_path,
-        lambda txt: TextClip(txt, font='SimHei', color='white', fontsize=100)
+        lambda txt: TextClip(txt, font=os.path.join(BASE_DIR, "fonts/SourceHanSansSC-Bold-2.otf"), fontsize=100,
+                             color='white', stroke_color='black', stroke_width=5)
     )
-    subtitles = subtitles.set_position(("center", "bottom"))
+    subtitles = subtitles.set_position(("center", "bottom")).margin(bottom=20, opacity=0)  # 离底部20个像素
     video_clip = CompositeVideoClip([video_clip, subtitles])
 
     # 添加音频

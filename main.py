@@ -6,9 +6,17 @@ from typing import List
 
 import pandas
 
-from conf.config import BASE_DIR, config
-from utils.audio_generation import text2audio, Subtitle
-from utils.video_generation import generate_video, combining_video
+try:
+    from conf.config import BASE_DIR, config
+    from utils.audio_generation import text2audio, Subtitle
+    from utils.video_generation import generate_video, combining_video
+except ModuleNotFoundError:
+    import os
+    import sys
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 离开IDE也能正常导入自己定义的包
+    from conf.config import BASE_DIR, config
+    from utils.audio_generation import text2audio, Subtitle
+    from utils.video_generation import generate_video, combining_video
 
 
 def get_subtitles_list(subtitles: List):

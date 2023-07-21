@@ -57,6 +57,9 @@ def main():
     bgm_path = random.choice(
         [os.path.join(bgm_path, filename) for filename in os.listdir(bgm_path) if not filename.startswith('.')])
 
+    # 随机选一个字幕配音人
+    subtitle_voice = config["SUPPORTED_VOICES"][random.choice(list(config["SUPPORTED_VOICES"].keys()))]
+
     subtitles_list = get_subtitles_list(subtitles)
 
     for subtitles in subtitles_list:
@@ -72,7 +75,7 @@ def main():
             subtitle_output_path = os.path.join(BASE_DIR, f"output/{now}/{index+1}.srt")
             audio_path_list.append(audio_output_path)
             subtitle_path_list.append(subtitle_output_path)
-            text2audio(text=subtitle.text, audio_output_path=audio_output_path,
+            text2audio(text=subtitle.text, subtitle_voice=subtitle_voice, audio_output_path=audio_output_path,
                        subtitle_output_path=subtitle_output_path)
             # 生成视频文件
             video_output_path = os.path.join(BASE_DIR, f"output/{now}/{index+1}.mp4")

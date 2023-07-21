@@ -9,11 +9,12 @@ from moviepy.editor import ImageClip
 from moviepy.video.VideoClip import TextClip, VideoClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from moviepy.video.compositing.concatenate import concatenate_videoclips
+from moviepy.video.compositing.transitions import crossfadein
 from moviepy.video.fx.resize import resize
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.tools.subtitles import SubtitlesClip
 
-from conf.config import logger, config
+from conf.config import logger, config, BASE_DIR
 from utils.audio_generation import Subtitle
 
 
@@ -67,6 +68,30 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
                                bitrate='10000k', threads=os.cpu_count())
     final_clip.close()
+
+
+def combining_video_within_cross_fade(clips: List[VideoClip], cross_fade_duration: float = 0.5) -> VideoClip:
+    """
+    以交叉淡化(叠化转场)的方式组合视频
+    :param clips: 视频片段
+    :param cross_fade_duration: 交叉淡化时长
+    :return:
+    """
+
+    clips_new = list()
+    current_duration = 0
+    for index, clip in enumerate(clips):
+        if index == 0:
+            clips_new.append(clip)
+            current_duration += clip.duration
+        else:
+            clip: VideoClip = crossfadein(clip, cross_fade_duration)
+            clips_new.append(clip.set_start(current_duration-cross_fade_duration))
+            current_duration += (clip.duration - cross_fade_duration)
+
+    final_clip = CompositeVideoClip(clips_new)
+
+    return final_clip
 
 
 def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, video_output_path: str) -> VideoClip:
@@ -158,7 +183,19 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
 
 def main():
-    pass
+    # 交叉淡化
+    clip1 = ImageClip(os.path.join(BASE_DIR, "example/1.jpg")).set_duration(3)
+    clip2 = ImageClip(os.path.join(BASE_DIR, "example/2.jpg")).set_duration(3)
+
+    clip1 = resize(clip1, width=1080, height=math.floor(1080/(1920/1080)))
+    clip2 = resize(clip2, width=1080, height=math.floor(1080/(1920/1080)))
+
+    final_clip = combining_video_within_cross_fade(clips=[clip1, clip2], cross_fade_duration=1)
+
+    video_output_path = os.path.join(BASE_DIR, f"output/cross_fade.mp4")
+    final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
+                               bitrate='10000k', threads=os.cpu_count())
+    final_clip.close()
 
 
 if __name__ == '__main__':

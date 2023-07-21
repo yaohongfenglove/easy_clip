@@ -40,9 +40,16 @@ def get_subtitles_list(subtitles: List):
     return text_list
 
 
-def main():
+def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
+    """
+    字幕文件转视频文件
+    :param video_script_path: 视频脚本文件的路径，.xlsx文件
+    :param shuffle_subtitles: 是否要打乱字幕顺序
+    :return:
+    """
+
     # 读取视频脚本文件
-    rows = pandas.read_excel(os.path.join(BASE_DIR, '视频脚本文件.xlsx'), header=0)
+    rows = pandas.read_excel(video_script_path, header=0)
     rows = list(rows.values)
 
     subtitles = [Subtitle(text=row[0], metadata={"media_path": row[1]}) for row in rows]
@@ -59,15 +66,18 @@ def main():
         [os.path.join(bgm_path, filename) for filename in os.listdir(bgm_path) if not filename.startswith('.')])
     logger.info(f"选择的bgm：{bgm_path}")
 
-    # 随机选一个字幕配音人
-    subtitle_voice = config["SUPPORTED_VOICES"][random.choice(list(config["SUPPORTED_VOICES"].keys()))]
-    logger.info(f"选择的字幕配音人：{subtitle_voice}")
-
-    subtitles_list = get_subtitles_list(subtitles)
+    if shuffle_subtitles:
+        subtitles_list = get_subtitles_list(subtitles)
+    else:
+        subtitles_list = [subtitles, ]
 
     for subtitles in subtitles_list:
         now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         os.makedirs(os.path.join(BASE_DIR, f"output/{now}"))  # 文件输出路径
+
+        # 随机选一个字幕配音人
+        subtitle_voice = config["SUPPORTED_VOICES"][random.choice(list(config["SUPPORTED_VOICES"].keys()))]
+        logger.info(f"选择的字幕配音人：{subtitle_voice}")
 
         video_path_list = list()
         audio_path_list = list()
@@ -91,6 +101,17 @@ def main():
         combining_video(video_path_list=video_path_list, audio_path_list=audio_path_list, subtitle_path_list=subtitle_path_list,
                         cover_path=cover_path,
                         video_output_path=video_output_final_path)
+
+
+def main():
+    video_script_path = os.path.join(BASE_DIR, '视频脚本文件.xlsx')
+    videos_per_subtitles = 10  # 一个字幕要生成几个视频
+
+    for i in range(videos_per_subtitles):
+        subtitles2video(
+            video_script_path=video_script_path,
+            shuffle_subtitles=False
+        )
 
 
 if __name__ == '__main__':

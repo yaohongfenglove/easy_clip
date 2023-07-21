@@ -7,14 +7,14 @@ from typing import List
 import pandas
 
 try:
-    from conf.config import BASE_DIR, config
+    from conf.config import BASE_DIR, config, logger
     from utils.audio_generation import text2audio, Subtitle
     from utils.video_generation import generate_video, combining_video
 except ModuleNotFoundError:
     import os
     import sys
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 离开IDE也能正常导入自己定义的包
-    from conf.config import BASE_DIR, config
+    from conf.config import BASE_DIR, config, logger
     from utils.audio_generation import text2audio, Subtitle
     from utils.video_generation import generate_video, combining_video
 
@@ -51,14 +51,17 @@ def main():
     cover_path = os.path.join(config["media_root_path"], rows[0][2])
     cover_path = random.choice(
         [os.path.join(cover_path, filename) for filename in os.listdir(cover_path) if not filename.startswith('.')])
+    logger.info(f"选择的封面：{cover_path}")
 
     # BGM路径
     bgm_path = os.path.join(config["media_root_path"], rows[0][3])
     bgm_path = random.choice(
         [os.path.join(bgm_path, filename) for filename in os.listdir(bgm_path) if not filename.startswith('.')])
+    logger.info(f"选择的bgm：{bgm_path}")
 
     # 随机选一个字幕配音人
     subtitle_voice = config["SUPPORTED_VOICES"][random.choice(list(config["SUPPORTED_VOICES"].keys()))]
+    logger.info(f"选择的字幕配音人：{subtitle_voice}")
 
     subtitles_list = get_subtitles_list(subtitles)
 

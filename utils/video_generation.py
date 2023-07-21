@@ -66,7 +66,7 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
 
     # 保存合成的视频
     final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
-                               bitrate='10000k', threads=os.cpu_count())
+                               bitrate='10000k', threads=os.cpu_count(), audio_bufsize=1000)  # 尝试解决末尾的音频重复问题 https://github.com/Zulko/moviepy/issues/1310
     final_clip.close()
 
 
@@ -176,7 +176,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
     # 保存合成的视频
     video_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
-                               bitrate='10000k', threads=os.cpu_count())
+                               bitrate='10000k', threads=os.cpu_count(), audio_bufsize=1000)
     video_clip.close()
 
     return video_clip
@@ -194,7 +194,7 @@ def main():
 
     video_output_path = os.path.join(BASE_DIR, f"output/cross_fade.mp4")
     final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",
-                               bitrate='10000k', threads=os.cpu_count())
+                               bitrate='10000k', threads=os.cpu_count(), audio_bufsize=1000)
     final_clip.close()
 
 

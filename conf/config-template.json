@@ -16,5 +16,30 @@
         "13": "zh-TW-HsiaoYuNeural",
         "14": "zh-TW-YunJheNeural"
     },
-    "media_root_path": "D:/data/program/easy_clip/media"
+    "media_root_path": "D:/data/program/easy_clip/media",
+    "videos_per_subtitles": 10,
+    "Maximum_limit_after_splitting_text": 15,
+    "background_width":1080,
+    "background_height": 1920,
+    "material_width": 1080,
+    "material_height": 607.5,
+    "cross_fade_duration":0,
+    "video_volume": 0.8,
+    "bgm_volume": 0.5,
+    "image_display_range":
+    {
+        "begin": 1,
+        "end": 1.5
+    },
+    "subtitles":
+    {
+        "fontsize":100,
+        "color": "white",
+        "stroke_color": "black",
+        "stroke_width": 5,
+        "bottom": 20
+    }
+
+
+
 }

@@ -99,13 +99,13 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
         # 组合片段，生成最终视频
         video_output_final_path = os.path.join(BASE_DIR, f"output/{now}/{now}.mp4")
         combining_video(video_path_list=video_path_list, audio_path_list=audio_path_list, subtitle_path_list=subtitle_path_list,
-                        cover_path=cover_path,
+                        cover_path=cover_path, bgm_path=bgm_path,
                         video_output_path=video_output_final_path)
 
 
 def main():
     video_script_path = os.path.join(BASE_DIR, '视频脚本文件.xlsx')
-    videos_per_subtitles = 10  # 一个字幕要生成几个视频
+    videos_per_subtitles = config["videos_per_subtitles"]  # 一个字幕要生成几个视频
 
     for i in range(videos_per_subtitles):
         subtitles2video(

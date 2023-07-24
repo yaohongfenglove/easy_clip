@@ -57,20 +57,20 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
 
     video_clip = video_clip.without_audio()
     video_clip = video_clip.set_audio(audio_clip)
-    video_clip = resize(video_clip, width=config["material_width"],
-                        height=math.floor(config["material_height"]))
+    video_clip = resize(video_clip, width=config["compose_params"]["horizontal_material_width"],
+                        height=math.floor(config["compose_params"]["horizontal_material_height"]))
 
     # 加封面
     background_clip = ImageClip(cover_path).set_duration(video_clip.duration)
-    background_clip = resize(background_clip, width=config["background_width"],
-                             height=config["background_height"])
+    background_clip = resize(background_clip, width=config["compose_params"]["background_width"],
+                             height=config["compose_params"]["background_height"])
 
     final_clip = CompositeVideoClip([background_clip, video_clip.set_position("center")])
 
-    video_audio_clip = final_clip.audio.volumex(config["video_volume"])
+    video_audio_clip = final_clip.audio.volumex(config["compose_params"]["video_volume"])
     # 加bgm
-    bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration).volumex(config["bgm_volume"])
-    bgm_clip = audio_fadeout(bgm_clip, config["bgm_fade_out_time"])
+    bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration).volumex(config["compose_params"]["bgm_volume"])
+    bgm_clip = audio_fadeout(bgm_clip, config["compose_params"]["bgm_fadeout_duration"])
     audio_clip_add = CompositeAudioClip([video_audio_clip, bgm_clip])
     final_clip = final_clip.set_audio(audio_clip_add)
 
@@ -81,7 +81,7 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
 
 
 def combining_video_within_cross_fade(clips: List[VideoClip],
-                                      cross_fade_duration: float = config["cross_fade_duration"]) -> VideoClip:
+                                      cross_fade_duration: float = config["compose_params"]["cross_fade_duration"]) -> VideoClip:
     """
     以交叉淡化(叠化转场)的方式组合视频
     :param clips: 视频片段
@@ -106,7 +106,7 @@ def combining_video_within_cross_fade(clips: List[VideoClip],
 
 
 def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, video_output_path: str,
-                   cross_fade_duration: float = config["cross_fade_duration"]) -> VideoClip:
+                   cross_fade_duration: float = config["compose_params"]["cross_fade_duration"]) -> VideoClip:
     """
     生成视频
     :param cross_fade_duration: 转场时间
@@ -118,7 +118,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     """
 
     # 获取视频画面素材
-    media_path = os.path.join(config["media_root_path"], subtitle.metadata["media_path"])
+    media_path = os.path.join(config["compose_params"]["media_root_path"], subtitle.metadata["media_path"])
     medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path) if not filename.startswith('.')]
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
@@ -135,13 +135,13 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
         if media_type == "image":
             if i == 1:
-                image_duration = random.uniform(config["image_display_range"]["begin"],
-                                                config["image_display_range"]["end"])
+                image_duration = random.uniform(config["compose_params"]["image_duration"]["min"],
+                                                config["compose_params"]["image_duration"]["max"])
             else:
-                image_duration = random.uniform(config["image_display_range"]["begin"]+cross_fade_duration,
-                                                config["image_display_range"]["end"]+cross_fade_duration)
+                image_duration = random.uniform(config["compose_params"]["image_duration"]["min"]+cross_fade_duration,
+                                                config["compose_params"]["image_duration"]["max"]+cross_fade_duration)
             image_clip = ImageClip(media_path).set_duration(min(video_left_duration, image_duration))
-            image_clip = resize(clip=image_clip, width=config["material_width"], height=config["material_height"])
+            image_clip = resize(clip=image_clip, width=config["compose_params"]["horizontal_material_width"], height=config["compose_params"]["horizontal_material_height"])
 
             video_clips.append(image_clip)
             i += 1
@@ -158,7 +158,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                 else:
                     t_start = random.uniform(0, video_clip.duration - video_left_duration)  # t_start是视频的开始时间点
                     video_clip = video_clip.subclip(t_start, t_start + video_left_duration)
-                video_clip = resize(clip=video_clip, width=config["material_width"], height=config["material_height"])
+                video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"], height=config["compose_params"]["horizontal_material_height"])
 
                 video_clips.append(video_clip)
                 i += 1
@@ -170,7 +170,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     break
             else:
                 if video_clip.duration <= video_left_duration:
-                    video_clip = resize(clip=video_clip, width=config["material_width"], height=config["material_height"])
+                    video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"], height=config["compose_params"]["horizontal_material_height"])
 
                     video_clips.append(video_clip)
                     i += 1
@@ -183,7 +183,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                 else:
                     t_start = random.uniform(0, video_clip.duration - (video_left_duration + cross_fade_duration))
                     video_clip = video_clip.subclip(t_start, t_start + (video_left_duration + cross_fade_duration))
-                    video_clip = resize(clip=video_clip, width=config["material_width"], height=config["material_height"])
+                    video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"], height=config["compose_params"]["horizontal_material_height"])
 
                     video_clips.append(video_clip)
                     i += 1
@@ -205,11 +205,11 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     subtitles = SubtitlesClip(
         subtitle_path,
         lambda txt: TextClip(txt, font=os.path.join(BASE_DIR, "fonts/SourceHanSansSC-Bold-2.otf"),
-                             fontsize=config["subtitles"]["fontsize"], color=config["subtitles"]["color"],
-                             stroke_color=config["subtitles"]["stroke_color"],
-                             stroke_width=config["subtitles"]["stroke_width"])
+                             fontsize=config["compose_params"]["subtitles"]["fontsize"], color=config["compose_params"]["subtitles"]["color"],
+                             stroke_color=config["compose_params"]["subtitles"]["stroke_color"],
+                             stroke_width=config["compose_params"]["subtitles"]["stroke_width"])
     )
-    subtitles = subtitles.set_position(("center", "bottom")).margin(bottom=config["subtitles"]["bottom"], opacity=0)  # 离底部20个像素
+    subtitles = subtitles.set_position(("center", "bottom")).margin(bottom=config["compose_params"]["subtitles"]["margin"]["bottom"], opacity=0)  # 离底部20个像素
     video_clip = CompositeVideoClip([video_clip, subtitles])
 
     # 添加音频

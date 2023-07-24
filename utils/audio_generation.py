@@ -44,7 +44,7 @@ def vtt_file_to_subtitles(file_path: str):
     return times_texts
 
 
-def split_text(text: str, max_len: int = 15) -> List[str]:
+def split_text(text: str, max_len: int = config["compose_params"]["subtitle_length_limit"]) -> List[str]:
     """
     分割文本
     :param text: 待分割的文本

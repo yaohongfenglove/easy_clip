@@ -55,13 +55,13 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
     subtitles = [Subtitle(text=row[0], metadata={"media_path": row[1]}) for row in rows]
 
     # 封面路径
-    cover_path = os.path.join(config["media_root_path"], rows[0][2])
+    cover_path = os.path.join(config["compose_params"]["media_root_path"], rows[0][2])
     cover_path = random.choice(
         [os.path.join(cover_path, filename) for filename in os.listdir(cover_path) if not filename.startswith('.')])
     logger.info(f"选择的封面：{cover_path}")
 
     # BGM路径
-    bgm_path = os.path.join(config["media_root_path"], rows[0][3])
+    bgm_path = os.path.join(config["compose_params"]["media_root_path"], rows[0][3])
     bgm_path = random.choice(
         [os.path.join(bgm_path, filename) for filename in os.listdir(bgm_path) if not filename.startswith('.')])
     logger.info(f"选择的bgm：{bgm_path}")
@@ -99,13 +99,13 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
         # 组合片段，生成最终视频
         video_output_final_path = os.path.join(BASE_DIR, f"output/{now}/{now}.mp4")
         combining_video(video_path_list=video_path_list, audio_path_list=audio_path_list, subtitle_path_list=subtitle_path_list,
-                        cover_path=cover_path,
+                        cover_path=cover_path, bgm_path=bgm_path,
                         video_output_path=video_output_final_path)
 
 
 def main():
     video_script_path = os.path.join(BASE_DIR, '视频脚本文件.xlsx')
-    videos_per_subtitles = 10  # 一个字幕要生成几个视频
+    videos_per_subtitles = config["compose_params"]["videos_per_subtitles"]  # 一个字幕要生成几个视频
 
     for i in range(videos_per_subtitles):
         subtitles2video(

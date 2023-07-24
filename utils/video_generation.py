@@ -53,10 +53,9 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     video_clips = [VideoFileClip(video_path) for video_path in video_path_list]
     audio_clips = [AudioFileClip(audio_path) for audio_path in audio_path_list]
     video_clip = concatenate_videoclips(video_clips, method="compose")
-    audio_clip = concatenate_audioclips(audio_clips)
+    voice_clip = concatenate_audioclips(audio_clips)
 
     video_clip = video_clip.without_audio()
-    video_clip = video_clip.set_audio(audio_clip)
     video_clip = resize(video_clip, width=config["compose_params"]["horizontal_material_width"],
                         height=math.floor(config["compose_params"]["horizontal_material_height"]))
 
@@ -67,12 +66,13 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
 
     final_clip = CompositeVideoClip([background_clip, video_clip.set_position("center")])
 
-    video_audio_clip = final_clip.audio.volumex(config["compose_params"]["video_volume"])
-    # 加bgm
+    # 添加人声和bgm
     bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration).volumex(config["compose_params"]["bgm_volume"])
+    bgm_clip = bgm_clip.volumex(config["compose_params"]["bgm_volume"])
     bgm_clip = audio_fadeout(bgm_clip, config["compose_params"]["bgm_fadeout_duration"])
-    audio_clip_add = CompositeAudioClip([video_audio_clip, bgm_clip])
-    final_clip = final_clip.set_audio(audio_clip_add)
+
+    final_audio_clip = CompositeAudioClip([voice_clip, bgm_clip])
+    final_clip = final_clip.set_audio(final_audio_clip)
 
     # 保存合成的视频
     final_clip.write_videofile(filename=video_output_path, fps=30, audio_codec="aac", codec="mpeg4",

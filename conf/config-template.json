@@ -25,9 +25,7 @@
         "horizontal_material_width": 1080,
         "horizontal_material_height": 607.5,
         "cross_fade_duration": 0.5,
-        "video_volume": 0.8,
         "bgm_volume": 0.5,
-        "voice_volume": 1.0,
         "bgm_fadeout_duration": 2,
         "image_duration": {
             "min": 1,

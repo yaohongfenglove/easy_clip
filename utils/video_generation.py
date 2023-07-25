@@ -134,95 +134,96 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
         media_path = random.choice(medias_used[f"{subtitle_path}"])
 
         media_type = get_file_type(file_path=media_path)
-        video_left_duration = video_final_duration - video_current_duration  # 时间轴剩余时长
+        video_left_duration = video_final_duration  # 时间轴剩余时长
 
         if media_type == "image":
-            if media_path not in medias_used.get(f"{subtitle_path}", []):
-                break
+            medias_used[f"{subtitle_path}"].remove(media_path)
+
+            if i == 1:
+                image_duration = random.uniform(config["compose_params"]["image_duration"]["min"],
+                                                config["compose_params"]["image_duration"]["max"])
             else:
-                medias_used.get(f"{subtitle_path}").remove(media_path)
+                image_duration = random.uniform(
+                    config["compose_params"]["image_duration"]["min"] + cross_fade_duration,
+                    config["compose_params"]["image_duration"]["max"] + cross_fade_duration)
 
-                if i == 1:
-                    image_duration = random.uniform(config["compose_params"]["image_duration"]["min"],
-                                                    config["compose_params"]["image_duration"]["max"])
-                else:
-                    image_duration = random.uniform(
-                        config["compose_params"]["image_duration"]["min"] + cross_fade_duration,
-                        config["compose_params"]["image_duration"]["max"] + cross_fade_duration)
-                image_clip = ImageClip(media_path).set_duration(min(video_left_duration, image_duration))
-                image_clip = resize(clip=image_clip, width=config["compose_params"]["horizontal_material_width"],
-                                    height=config["compose_params"]["horizontal_material_height"])
+            image_clip = ImageClip(media_path).set_duration(min(video_left_duration, image_duration))
+            image_clip = resize(clip=image_clip, width=config["compose_params"]["horizontal_material_width"],
+                                height=config["compose_params"]["horizontal_material_height"])
 
-                video_clips.append(image_clip)
-                i += 1
+            video_clips.append(image_clip)
+            if i == 1:
                 video_current_duration += image_clip.duration
-
-                logger.info(
-                    f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-                if video_current_duration == video_final_duration:
-                    break
-        elif media_type == "video":
-            if media_path not in medias_used.get(f"{subtitle_path}", []):
-                break
             else:
-                if media_path not in video_cut_points.keys():
-                    video_cut_points[f"{media_path}"] = 0.0
+                video_current_duration += (image_clip.duration - cross_fade_duration)
+            video_left_duration = video_final_duration - video_current_duration
+            i += 1
+
+            logger.info(
+                f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+            if video_current_duration == video_final_duration:
+                break
+        elif media_type == "video":
+            if media_path not in video_cut_points.keys():
+                video_cut_points[f"{media_path}"] = 0
 
             video_clip = VideoFileClip(media_path)
             if i == 1:
-                if video_cut_points[f"{media_path}"] < video_clip.duration:
-                    if (video_clip.duration - video_cut_points[f"{media_path}"]) <= video_left_duration:
-                        medias_used.get(f"{subtitle_path}").remove(media_path)
-                    else:
-                        video_clip = video_clip.subclip(video_cut_points[f"{media_path}"],
-                                                            video_cut_points[f"{media_path}"] + video_left_duration)
-                        video_cut_points[f"{media_path}"] = video_cut_points[f"{media_path}"] + video_left_duration
+                if (video_clip.duration - video_cut_points[f"{media_path}"]) <= video_left_duration:
+                    medias_used.get(f"{subtitle_path}").remove(media_path)
+                else:
+                    t_start = video_cut_points[f"{media_path}"]
+                    t_end = video_cut_points[f"{media_path}"] + video_left_duration
+                    video_clip = video_clip.subclip(t_start, t_end)
+                    video_cut_points[f"{media_path}"] = video_cut_points[f"{media_path}"] + video_left_duration
 
+                video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
+                                    height=config["compose_params"]["horizontal_material_height"])
+                video_clips.append(video_clip)
+                video_current_duration += video_clip.duration
+                video_left_duration = video_final_duration - video_current_duration
+                i += 1
+
+                logger.info(
+                        f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+                if video_current_duration == video_final_duration:
+                    break
+            else:
+                if (video_clip.duration - video_cut_points[f"{media_path}"] - cross_fade_duration) <= video_left_duration:
                     video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                            height=config["compose_params"]["horizontal_material_height"])
+                                        height=config["compose_params"]["horizontal_material_height"])
 
+                    medias_used.get(f"{subtitle_path}").remove(media_path)
                     video_clips.append(video_clip)
+                    video_current_duration += (video_clip.duration - cross_fade_duration)
+                    video_left_duration = video_final_duration - video_current_duration
                     i += 1
-                    video_current_duration = video_current_duration + video_clip.duration
 
                     logger.info(
-                            f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+                        f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
                     if video_current_duration == video_final_duration:
                         break
                 else:
-                    if (video_clip.duration - video_cut_points[f"{media_path}"]) <= video_left_duration:
-                        video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                            height=config["compose_params"]["horizontal_material_height"])
+                    video_clip = video_clip.subclip(video_cut_points[f"{media_path}"],
+                                                    (video_cut_points[f"{media_path}"] +
+                                                     video_left_duration + cross_fade_duration))
+                    video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
+                                        height=config["compose_params"]["horizontal_material_height"])
 
-                        medias_used.get(f"{subtitle_path}").remove(media_path)
-                        video_clips.append(video_clip)
-                        i += 1
-                        video_current_duration = video_current_duration + video_clip.duration - cross_fade_duration
+                    video_cut_points[f"{media_path}"] = video_cut_points[
+                                                            f"{media_path}"] + video_left_duration + cross_fade_duration
 
-                        logger.info(
-                            f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-                        if video_current_duration == video_final_duration:
-                            break
+                    video_clips.append(video_clip)
+                    video_current_duration += video_clip.duration
+                    video_left_duration = video_final_duration - video_current_duration
+                    i += 1
+
+                    logger.info(
+                        f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
+                    if video_current_duration == video_final_duration:
+                        break
                     else:
-                        video_clip = video_clip.subclip(video_cut_points[f"{media_path}"],
-                                                        (video_cut_points[f"{media_path}"] +
-                                                         video_left_duration + cross_fade_duration))
-                        video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                            height=config["compose_params"]["horizontal_material_height"])
-
-                        video_cut_points[f"{media_path}"] = video_cut_points[
-                                                                f"{media_path}"] + video_left_duration + cross_fade_duration
-
-                        video_clips.append(video_clip)
-                        i += 1
-                        video_current_duration = video_current_duration + video_clip.duration
-
-                        logger.info(
-                            f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-                        if video_current_duration == video_final_duration:
-                            break
-                        else:
-                            continue
+                        continue
         else:
             raise ValueError(f"不支持该类型的媒体文件：{media_path}")
 

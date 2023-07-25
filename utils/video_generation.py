@@ -2,6 +2,9 @@ import math
 import os
 import random
 from typing import List
+
+import cv2
+from PIL import Image
 from moviepy.audio.fx.audio_fadeout import audio_fadeout
 from moviepy.audio.AudioClip import concatenate_audioclips, CompositeAudioClip
 from moviepy.audio.io.AudioFileClip import AudioFileClip
@@ -38,6 +41,26 @@ def get_file_type(file_path: str) -> str:
         return 'video'
     else:
         return 'unknown'
+
+
+def is_vertical_material(file_path: str) -> bool:
+    """
+    判断是否竖向素材。
+    是则返回True，否则False
+    :param file_path: 文件的全路径
+    :return:
+    """
+    file_type = get_file_type(file_path)
+    if file_type == "image":
+        img = Image.open(file_path)
+        width, height = img.size
+    elif file_type == "video":
+        cap = cv2.VideoCapture(file_path)
+        width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    else:
+        raise ValueError("不支持的文件类型")
+    return height > width
 
 
 def combining_video(video_path_list: List[str], audio_path_list: List[str], subtitle_path_list: List[str],
@@ -107,22 +130,34 @@ def combining_video_within_cross_fade(clips: List[VideoClip],
 
 
 def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, video_output_path: str,
-                   cross_fade_duration: float = config["compose_params"]["cross_fade_duration"]) -> VideoClip:
+                   material_direction: str, cross_fade_duration: float = config["compose_params"]["cross_fade_duration"]) -> VideoClip:
     """
     生成视频
     :param cross_fade_duration: 转场时间
-    :param subtitle: 字幕
-    :param audio_path:
-    :param subtitle_path:
-    :param video_output_path:
+    :param subtitle: 字幕对象
+    :param audio_path: 音频文件路径
+    :param subtitle_path: 字幕文件路径
+    :param material_direction: 素材方向
+    :param video_output_path: 视频输出路径
     :return:
     """
 
     # 获取视频画面素材
     if subtitle_path not in medias_used.keys():
         media_path = os.path.join(config["compose_params"]["media_root_path"], subtitle.metadata["media_path"])
-        medias = [os.path.join(media_path, filename) for filename in os.listdir(media_path) if
-                  not filename.startswith('.')]
+
+        medias = list()
+        for filename in os.listdir(media_path):
+            file_path = os.path.join(media_path, filename)
+
+            if filename.startswith(('.', 'Thumbs.db')):
+                continue
+
+            if material_direction == "vertical" and is_vertical_material(str(file_path)):
+                medias.append(file_path)
+            elif material_direction == "horizontal" and not is_vertical_material(str(file_path)):
+                medias.append(file_path)
+
         medias_used[f"{subtitle_path}"] = medias
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
@@ -148,8 +183,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     config["compose_params"]["image_duration"]["max"] + cross_fade_duration)
 
             image_clip = ImageClip(media_path).set_duration(min(video_left_duration, image_duration))
-            image_clip = resize(clip=image_clip, width=config["compose_params"]["horizontal_material_width"],
-                                height=config["compose_params"]["horizontal_material_height"])
+            if material_direction == "horizontal":
+                image_clip = resize(clip=image_clip, width=config["compose_params"]["horizontal_material_width"],
+                                    height=config["compose_params"]["horizontal_material_height"])
 
             video_clips.append(image_clip)
             if i == 1:
@@ -177,8 +213,10 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     video_clip = video_clip.subclip(t_start, t_end)
                     video_cut_points[f"{media_path}"] = video_cut_points[f"{media_path}"] + video_left_duration
 
-                video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                    height=config["compose_params"]["horizontal_material_height"])
+                if material_direction == "horizontal":
+                    video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
+                                        height=config["compose_params"]["horizontal_material_height"])
+
                 video_clips.append(video_clip)
                 video_current_duration += video_clip.duration
                 video_left_duration = video_final_duration - video_current_duration
@@ -190,8 +228,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     break
             else:
                 if (video_clip.duration - video_cut_points[f"{media_path}"] - cross_fade_duration) <= video_left_duration:
-                    video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                        height=config["compose_params"]["horizontal_material_height"])
+                    if material_direction == "horizontal":
+                        video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
+                                            height=config["compose_params"]["horizontal_material_height"])
 
                     medias_used.get(f"{subtitle_path}").remove(media_path)
                     video_clips.append(video_clip)
@@ -207,8 +246,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     video_clip = video_clip.subclip(video_cut_points[f"{media_path}"],
                                                     (video_cut_points[f"{media_path}"] +
                                                      video_left_duration + cross_fade_duration))
-                    video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                        height=config["compose_params"]["horizontal_material_height"])
+                    if material_direction == "horizontal":
+                        video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
+                                            height=config["compose_params"]["horizontal_material_height"])
 
                     video_cut_points[f"{media_path}"] = video_cut_points[
                                                             f"{media_path}"] + video_left_duration + cross_fade_duration

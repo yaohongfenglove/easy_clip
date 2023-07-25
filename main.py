@@ -79,6 +79,9 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
         subtitle_voice = config["SUPPORTED_VOICES"][random.choice(list(config["SUPPORTED_VOICES"].keys()))]
         logger.info(f"选择的字幕配音人：{subtitle_voice}")
 
+        # 封面决定取横向还是竖向的素材
+        material_direction: str = "vertical" if "_vertical" in cover_path else "horizontal"
+
         video_path_list = list()
         audio_path_list = list()
         subtitle_path_list = list()
@@ -94,7 +97,7 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
             video_output_path = os.path.join(BASE_DIR, f"output/{now}/{index+1}.mp4")
             video_path_list.append(video_output_path)
             generate_video(subtitle=subtitle, audio_path=audio_output_path, subtitle_path=subtitle_output_path,
-                           video_output_path=video_output_path)
+                           material_direction=material_direction, video_output_path=video_output_path)
 
         # 组合片段，生成最终视频
         video_output_final_path = os.path.join(BASE_DIR, f"output/{now}/{now}.mp4")

@@ -162,6 +162,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
     video_current_duration = 0  # 视频的当前时长
+    video_left_duration = video_final_duration  # 时间轴剩余时长
     video_clips: List[ImageClip, VideoFileClip] = list()
 
     i = 1
@@ -169,7 +170,6 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
         media_path = random.choice(medias_used[f"{subtitle_path}"])
 
         media_type = get_file_type(file_path=media_path)
-        video_left_duration = video_final_duration  # 时间轴剩余时长
 
         if media_type == "image":
             medias_used[f"{subtitle_path}"].remove(media_path)
@@ -186,6 +186,10 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
             if material_direction == "horizontal":
                 image_clip = resize(clip=image_clip, width=config["compose_params"]["horizontal_material_width"],
                                     height=config["compose_params"]["horizontal_material_height"])
+            else:
+                image_clip = resize(clip=image_clip, width=config["compose_params"]["background_width"],
+                                    height=config["compose_params"]["background_height"])
+
 
             video_clips.append(image_clip)
             if i == 1:
@@ -216,6 +220,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                 if material_direction == "horizontal":
                     video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
                                         height=config["compose_params"]["horizontal_material_height"])
+                else:
+                    video_clip = resize(clip=video_clip, width=config["compose_params"]["background_width"],
+                                        height=config["compose_params"]["background_height"])
 
                 video_clips.append(video_clip)
                 video_current_duration += video_clip.duration
@@ -231,6 +238,10 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     if material_direction == "horizontal":
                         video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
                                             height=config["compose_params"]["horizontal_material_height"])
+                    else:
+                        video_clip = resize(clip=video_clip,
+                                            width=config["compose_params"]["background_width"],
+                                            height=config["compose_params"]["background_height"])
 
                     medias_used.get(f"{subtitle_path}").remove(media_path)
                     video_clips.append(video_clip)
@@ -249,12 +260,16 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     if material_direction == "horizontal":
                         video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
                                             height=config["compose_params"]["horizontal_material_height"])
+                    else:
+                        video_clip = resize(clip=video_clip,
+                                            width=config["compose_params"]["background_width"],
+                                            height=config["compose_params"]["background_height"])
 
                     video_cut_points[f"{media_path}"] = video_cut_points[
                                                             f"{media_path}"] + video_left_duration + cross_fade_duration
 
                     video_clips.append(video_clip)
-                    video_current_duration += video_clip.duration
+                    video_current_duration += (video_clip.duration - cross_fade_duration)
                     video_left_duration = video_final_duration - video_current_duration
                     i += 1
 

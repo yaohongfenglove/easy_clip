@@ -288,7 +288,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     # 合成字幕
     subtitles = SubtitlesClip(
         subtitle_path,
-        lambda txt: TextClip(txt, font=os.path.join(BASE_DIR, f"fonts/{config['compose_params']['subtitles']['font_filename']}"),
+        lambda txt: TextClip(txt, font=f"{config['compose_params']['subtitles']['font_filename']}",
                              fontsize=config["compose_params"]["subtitles"]["fontsize"], color=config["compose_params"]["subtitles"]["color"],
                              stroke_color=config["compose_params"]["subtitles"]["stroke_color"],
                              stroke_width=config["compose_params"]["subtitles"]["stroke_width"])

@@ -67,7 +67,7 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     final_clip = CompositeVideoClip([background_clip, video_clip.set_position("center")])
 
     # 添加人声和bgm
-    bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration).volumex(config["compose_params"]["bgm_volume"])
+    bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration)
     bgm_clip = bgm_clip.volumex(config["compose_params"]["bgm_volume"])
     bgm_clip = audio_fadeout(bgm_clip, config["compose_params"]["bgm_fadeout_duration"])
 
@@ -204,7 +204,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     # 添加字幕
     subtitles = SubtitlesClip(
         subtitle_path,
-        lambda txt: TextClip(txt, font=os.path.join(BASE_DIR, "fonts/SourceHanSansSC-Bold-2.otf"),
+        lambda txt: TextClip(txt, font=os.path.join(BASE_DIR, f"fonts/{config['compose_params']['subtitles']['font_filename']}"),
                              fontsize=config["compose_params"]["subtitles"]["fontsize"], color=config["compose_params"]["subtitles"]["color"],
                              stroke_color=config["compose_params"]["subtitles"]["stroke_color"],
                              stroke_width=config["compose_params"]["subtitles"]["stroke_width"])

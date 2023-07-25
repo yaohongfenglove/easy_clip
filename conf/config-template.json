@@ -32,6 +32,7 @@
             "max": 1.5
         },
         "subtitles": {
+            "font_filename": "SourceHanSansSC-Heavy.otf",
             "fontsize": 100,
             "color": "white",
             "stroke_color": "black",

@@ -56,15 +56,13 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     voice_clip = concatenate_audioclips(audio_clips)
 
     video_clip = video_clip.without_audio()
-    video_clip = resize(video_clip, width=config["compose_params"]["horizontal_material_width"],
-                        height=math.floor(config["compose_params"]["horizontal_material_height"]))
 
     # 加封面
-    background_clip = ImageClip(cover_path).set_duration(video_clip.duration)
-    background_clip = resize(background_clip, width=config["compose_params"]["background_width"],
-                             height=config["compose_params"]["background_height"])
-
-    final_clip = CompositeVideoClip([background_clip, video_clip.set_position("center")])
+    cover_image_clip = ImageClip(cover_path).set_duration(video_clip.duration)
+    cover_image_clip = resize(cover_image_clip,
+                              width=config["compose_params"]["background_width"],
+                              height=config["compose_params"]["background_height"])
+    final_clip = CompositeVideoClip([video_clip, cover_image_clip])
 
     # 添加人声和bgm
     bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration)
@@ -201,7 +199,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     # 合成视频
     video_clip = combining_video_within_cross_fade(video_clips, cross_fade_duration=cross_fade_duration)
 
-    # 添加字幕
+    # 合成字幕
     subtitles = SubtitlesClip(
         subtitle_path,
         lambda txt: TextClip(txt, font=os.path.join(BASE_DIR, f"fonts/{config['compose_params']['subtitles']['font_filename']}"),
@@ -209,8 +207,14 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                              stroke_color=config["compose_params"]["subtitles"]["stroke_color"],
                              stroke_width=config["compose_params"]["subtitles"]["stroke_width"])
     )
-    subtitles = subtitles.set_position(("center", "bottom")).margin(bottom=config["compose_params"]["subtitles"]["margin"]["bottom"], opacity=0)  # 离底部20个像素
-    video_clip = CompositeVideoClip([video_clip, subtitles])
+
+    video_clip = CompositeVideoClip(
+        clips=[
+            video_clip.set_position(("center", "center")),
+            subtitles.set_position(("center", "bottom")).margin(bottom=config["compose_params"]["subtitles"]["margin"]["bottom"], opacity=0)
+        ],
+        size=(config["compose_params"]["background_width"], config["compose_params"]["background_height"])
+    )
 
     # 添加音频
     audio_clip = AudioFileClip(audio_path)

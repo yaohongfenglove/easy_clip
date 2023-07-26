@@ -57,13 +57,13 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
     # 封面路径
     cover_path = os.path.join(config["compose_params"]["media_root_path"], rows[0][2])
     cover_path = random.choice(
-        [os.path.join(cover_path, filename) for filename in os.listdir(cover_path) if not filename.startswith('.')])
+        [os.path.join(cover_path, filename) for filename in os.listdir(cover_path) if not filename.startswith(('.', 'Thumbs.db'))])
     logger.info(f"选择的封面：{cover_path}")
 
     # BGM路径
     bgm_path = os.path.join(config["compose_params"]["media_root_path"], rows[0][3])
     bgm_path = random.choice(
-        [os.path.join(bgm_path, filename) for filename in os.listdir(bgm_path) if not filename.startswith('.')])
+        [os.path.join(bgm_path, filename) for filename in os.listdir(bgm_path) if not filename.startswith(('.', 'Thumbs.db'))])
     logger.info(f"选择的bgm：{bgm_path}")
 
     if shuffle_subtitles:

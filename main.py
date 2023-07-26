@@ -107,7 +107,7 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
 
 
 def main():
-    video_script_path = os.path.join(BASE_DIR, '视频脚本文件.xlsx')
+    video_script_path = os.path.join(config["compose_params"]["media_root_path"], '视频脚本文件.xlsx')
     videos_per_subtitles = config["compose_params"]["videos_per_subtitles"]  # 一个字幕要生成几个视频
 
     for i in range(videos_per_subtitles):

@@ -211,6 +211,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
             if i == 1:
                 if (video_clip.duration - video_cut_points[f"{media_path}"]) <= video_left_duration:
                     medias_used.get(f"{subtitle_path}").remove(media_path)
+                    t_start = video_cut_points[f"{media_path}"]
+                    t_end = video_clip.duration
+                    video_clip = video_clip.subclip(t_start, t_end)
                 else:
                     t_start = video_cut_points[f"{media_path}"]
                     t_end = video_cut_points[f"{media_path}"] + video_left_duration
@@ -235,6 +238,10 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     break
             else:
                 if (video_clip.duration - video_cut_points[f"{media_path}"] - cross_fade_duration) <= video_left_duration:
+                    t_start = video_cut_points[f"{media_path}"]
+                    t_end = video_clip.duration
+                    video_clip = video_clip.subclip(t_start, t_end)
+
                     if material_direction == "horizontal":
                         video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
                                             height=config["compose_params"]["horizontal_material_height"])
@@ -254,9 +261,10 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     if video_current_duration == video_final_duration:
                         break
                 else:
-                    video_clip = video_clip.subclip(video_cut_points[f"{media_path}"],
-                                                    (video_cut_points[f"{media_path}"] +
-                                                     video_left_duration + cross_fade_duration))
+                    t_start = video_cut_points[f"{media_path}"]
+                    t_end = video_cut_points[f"{media_path}"] + video_left_duration + cross_fade_duration
+                    video_clip = video_clip.subclip(t_start, t_end)
+
                     if material_direction == "horizontal":
                         video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
                                             height=config["compose_params"]["horizontal_material_height"])

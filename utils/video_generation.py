@@ -7,6 +7,7 @@ import cv2
 from PIL import Image
 from moviepy.audio.fx.audio_fadeout import audio_fadeout
 from moviepy.audio.AudioClip import concatenate_audioclips, CompositeAudioClip
+from moviepy.audio.fx.audio_loop import audio_loop
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from moviepy.editor import ImageClip
 from moviepy.video.VideoClip import TextClip, VideoClip
@@ -92,6 +93,7 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
 
     # 添加人声和bgm
     bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration)
+    bgm_clip = audio_loop(bgm_clip, duration=video_clip.duration)
     bgm_clip = bgm_clip.volumex(config["compose_params"]["bgm_volume"])
     bgm_clip = audio_fadeout(bgm_clip, config["compose_params"]["bgm_fadeout_duration"])
 
@@ -201,7 +203,8 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
             logger.info(
                 f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-            if video_current_duration == video_final_duration:
+            # video_final_duration取值为两位小数，与video_current_duration做运算，结果的绝对值肯定小于0.01
+            if abs(video_final_duration - video_current_duration) < 0.01:
                 break
         elif media_type == "video":
             if media_path not in video_cut_points.keys():
@@ -234,7 +237,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
                 logger.info(
                         f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-                if video_current_duration == video_final_duration:
+                if abs(video_final_duration - video_current_duration) < 0.01:
                     break
             else:
                 if (video_clip.duration - video_cut_points[f"{media_path}"] - cross_fade_duration) <= video_left_duration:
@@ -258,7 +261,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
                     logger.info(
                         f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-                    if video_current_duration == video_final_duration:
+                    if abs(video_final_duration - video_current_duration) < 0.01:
                         break
                 else:
                     t_start = video_cut_points[f"{media_path}"]
@@ -283,10 +286,8 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
                     logger.info(
                         f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-                    if video_current_duration == video_final_duration:
+                    if abs(video_final_duration - video_current_duration) < 0.01:
                         break
-                    else:
-                        continue
         else:
             raise ValueError(f"不支持该类型的媒体文件：{media_path}")
 

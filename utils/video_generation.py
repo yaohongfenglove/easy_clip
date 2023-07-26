@@ -18,11 +18,9 @@ from moviepy.video.fx.resize import resize
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.tools.subtitles import SubtitlesClip
 
+import conf
 from conf.config import logger, config, BASE_DIR
 from utils.audio_generation import Subtitle
-
-video_cut_points = dict()
-medias_used = dict()
 
 
 def get_file_type(file_path: str) -> str:
@@ -145,7 +143,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     """
 
     # 获取视频画面素材
-    if subtitle_path not in medias_used.keys():
+    if subtitle_path not in conf.config.medias_used.keys():
         media_path = os.path.join(config["compose_params"]["media_root_path"], subtitle.metadata["media_path"])
 
         medias = list()
@@ -160,7 +158,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
             elif material_direction == "horizontal" and not is_vertical_material(str(file_path)):
                 medias.append(file_path)
 
-        medias_used[f"{subtitle_path}"] = medias
+        conf.config.medias_used[f"{subtitle_path}"] = medias
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
     video_current_duration = 0  # 视频的当前时长
@@ -168,13 +166,13 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     video_clips: List[ImageClip, VideoFileClip] = list()
 
     i = 1
-    while medias_used[f"{subtitle_path}"]:
-        media_path = random.choice(medias_used[f"{subtitle_path}"])
+    while conf.config.medias_used[f"{subtitle_path}"]:
+        media_path = random.choice(conf.config.medias_used[f"{subtitle_path}"])
 
         media_type = get_file_type(file_path=media_path)
 
         if media_type == "image":
-            medias_used[f"{subtitle_path}"].remove(media_path)
+            conf.config.medias_used[f"{subtitle_path}"].remove(media_path)
 
             if i == 1:
                 image_duration = random.uniform(config["compose_params"]["image_duration"]["min"],
@@ -192,7 +190,6 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                 image_clip = resize(clip=image_clip, width=config["compose_params"]["background_width"],
                                     height=config["compose_params"]["background_height"])
 
-
             video_clips.append(image_clip)
             if i == 1:
                 video_current_duration += image_clip.duration
@@ -203,25 +200,26 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
             logger.info(
                 f"当前时长：{video_current_duration} 剩余时长:：{video_left_duration} 最终时长：{video_final_duration}")
-            # video_final_duration取值为两位小数，与video_current_duration做运算，结果的绝对值肯定小于0.01
+
+            # 这里不能用等于0来判断时间轴是否已经填满，因为浮点数计算时会有误差，差值可能会是一个无限接近0的数，所以这里用0.01近似表示相等。
             if abs(video_final_duration - video_current_duration) < 0.01:
                 break
         elif media_type == "video":
-            if media_path not in video_cut_points.keys():
-                video_cut_points[f"{media_path}"] = 0
+            if media_path not in conf.config.video_cut_points.keys():
+                conf.config.video_cut_points[f"{media_path}"] = 0
 
             video_clip = VideoFileClip(media_path)
             if i == 1:
-                if (video_clip.duration - video_cut_points[f"{media_path}"]) <= video_left_duration:
-                    medias_used.get(f"{subtitle_path}").remove(media_path)
-                    t_start = video_cut_points[f"{media_path}"]
+                if (video_clip.duration - conf.config.video_cut_points[f"{media_path}"]) <= video_left_duration:
+                    conf.config.medias_used.get(f"{subtitle_path}").remove(media_path)
+                    t_start = conf.config.video_cut_points[f"{media_path}"]
                     t_end = video_clip.duration
                     video_clip = video_clip.subclip(t_start, t_end)
                 else:
-                    t_start = video_cut_points[f"{media_path}"]
-                    t_end = video_cut_points[f"{media_path}"] + video_left_duration
+                    t_start = conf.config.video_cut_points[f"{media_path}"]
+                    t_end = conf.config.video_cut_points[f"{media_path}"] + video_left_duration
                     video_clip = video_clip.subclip(t_start, t_end)
-                    video_cut_points[f"{media_path}"] = video_cut_points[f"{media_path}"] + video_left_duration
+                    conf.config.video_cut_points[f"{media_path}"] = conf.config.video_cut_points[f"{media_path}"] + video_left_duration
 
                 if material_direction == "horizontal":
                     video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
@@ -240,8 +238,8 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                 if abs(video_final_duration - video_current_duration) < 0.01:
                     break
             else:
-                if (video_clip.duration - video_cut_points[f"{media_path}"] - cross_fade_duration) <= video_left_duration:
-                    t_start = video_cut_points[f"{media_path}"]
+                if (video_clip.duration - conf.config.video_cut_points[f"{media_path}"] - cross_fade_duration) <= video_left_duration:
+                    t_start = conf.config.video_cut_points[f"{media_path}"]
                     t_end = video_clip.duration
                     video_clip = video_clip.subclip(t_start, t_end)
 
@@ -253,7 +251,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                                             width=config["compose_params"]["background_width"],
                                             height=config["compose_params"]["background_height"])
 
-                    medias_used.get(f"{subtitle_path}").remove(media_path)
+                    conf.config.medias_used.get(f"{subtitle_path}").remove(media_path)
                     video_clips.append(video_clip)
                     video_current_duration += (video_clip.duration - cross_fade_duration)
                     video_left_duration = video_final_duration - video_current_duration
@@ -264,8 +262,8 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     if abs(video_final_duration - video_current_duration) < 0.01:
                         break
                 else:
-                    t_start = video_cut_points[f"{media_path}"]
-                    t_end = video_cut_points[f"{media_path}"] + video_left_duration + cross_fade_duration
+                    t_start = conf.config.video_cut_points[f"{media_path}"]
+                    t_end = conf.config.video_cut_points[f"{media_path}"] + video_left_duration + cross_fade_duration
                     video_clip = video_clip.subclip(t_start, t_end)
 
                     if material_direction == "horizontal":
@@ -276,7 +274,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                                             width=config["compose_params"]["background_width"],
                                             height=config["compose_params"]["background_height"])
 
-                    video_cut_points[f"{media_path}"] = video_cut_points[
+                    conf.config.video_cut_points[f"{media_path}"] = conf.config.video_cut_points[
                                                             f"{media_path}"] + video_left_duration + cross_fade_duration
 
                     video_clips.append(video_clip)

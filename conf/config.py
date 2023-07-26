@@ -7,6 +7,11 @@ from logging.handlers import RotatingFileHandler
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+# 记录视频切割点和媒体素材哪些已使用，用于去重
+video_cut_points = dict()
+medias_used = dict()
+
+
 # ########## 加载配置
 def load_config():
     config_path = os.path.join(BASE_DIR, "conf/config.json")

@@ -1,18 +1,21 @@
 import datetime
 import itertools
 import os.path
+import pickle
 import random
-from typing import List
+from typing import List, Dict
 
 import pandas
 
 try:
+    import conf
     from conf.config import BASE_DIR, config, logger
     from utils.audio_generation import text2audio, Subtitle
     from utils.video_generation import generate_video, combining_video
 except ModuleNotFoundError:
     import os
     import sys
+    import conf
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 离开IDE也能正常导入自己定义的包
     from conf.config import BASE_DIR, config, logger
     from utils.audio_generation import text2audio, Subtitle
@@ -114,16 +117,53 @@ def main():
         for filename in os.listdir(config["compose_params"]["media_root_path"])
         if filename.endswith(('.xlsx', '.xls'))
     ]
+    # 一个字幕要生成几个视频
+    videos_per_subtitles = config["compose_params"]["videos_per_subtitles"]
 
-    videos_per_subtitles = config["compose_params"]["videos_per_subtitles"]  # 一个字幕要生成几个视频
+    # 持久化处理：程序重启时先读取持久化文件，再进行任务处理
+    persistent_file_path = os.path.join(BASE_DIR, f'output/{config["compose_params"]["media_root_path"]}.pkl'.replace('\\', ''))
+    if not os.path.exists(persistent_file_path):
+        logger.warning(f"新建持久化文件：{persistent_file_path}")
+        with open(persistent_file_path, 'wb') as f:
+            session: Dict = {
+                "video_cut_points": dict(),
+                "medias_used":  dict(),
+                "success_tasks": list(),
+            }
+            pickle.dump(session, f)
+        print(os.path.getsize(persistent_file_path))
+    else:
+        logger.warning(f"加载持久化文件：{persistent_file_path}")
+        with open(persistent_file_path, 'rb') as f:
+            session: Dict = pickle.load(f, encoding='bytes')
+        logger.warning(f"持久化文件内容：{session}")
+
+        conf.config.video_cut_points = session.get("video_cut_points")
+        conf.config.medias_used = session.get("medias_used")
 
     for video_script_path in video_script_path_list:
         for i in range(videos_per_subtitles):
+
+            # 持久化处理：跳过已成功的任务
+            task_name = f"{video_script_path}-{i+1}"
+            if task_name in session["success_tasks"]:
+                logger.info(f"跳过任务：{task_name}")
+                continue
+
             logger.info(f"准备合成：{video_script_path} - 第{i+1}个/共{videos_per_subtitles}个")
             subtitles2video(
                 video_script_path=video_script_path,
                 shuffle_subtitles=False
             )
+
+            # 持久化处理：成功的任务进行持久化
+            with open(persistent_file_path, 'rb+') as f:
+                logger.info(f"持久化任务：{task_name}")
+                session: Dict = pickle.load(f, encoding='bytes')
+                session["success_tasks"].append(task_name)
+                session["video_cut_points"] = conf.config.video_cut_points
+                session["medias_used"] = conf.config.medias_used
+                pickle.dump(session, f)
 
 
 if __name__ == '__main__':

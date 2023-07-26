@@ -107,14 +107,23 @@ def subtitles2video(video_script_path: str, shuffle_subtitles: bool = False):
 
 
 def main():
-    video_script_path = os.path.join(config["compose_params"]["media_root_path"], '视频脚本文件.xlsx')
+
+    # 读取所有视频脚本文件
+    video_script_path_list = [
+        os.path.join(config["compose_params"]["media_root_path"], filename)
+        for filename in os.listdir(config["compose_params"]["media_root_path"])
+        if filename.endswith(('.xlsx', '.xls'))
+    ]
+
     videos_per_subtitles = config["compose_params"]["videos_per_subtitles"]  # 一个字幕要生成几个视频
 
-    for i in range(videos_per_subtitles):
-        subtitles2video(
-            video_script_path=video_script_path,
-            shuffle_subtitles=False
-        )
+    for video_script_path in video_script_path_list:
+        for i in range(videos_per_subtitles):
+            logger.info(f"准备合成：{video_script_path} - 第{i+1}个/共{videos_per_subtitles}个")
+            subtitles2video(
+                video_script_path=video_script_path,
+                shuffle_subtitles=False
+            )
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ from PIL import Image
 from moviepy.audio.fx.audio_fadeout import audio_fadeout
 from moviepy.audio.AudioClip import concatenate_audioclips, CompositeAudioClip
 from moviepy.audio.fx.audio_loop import audio_loop
+from moviepy.audio.fx.volumex import volumex
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from moviepy.editor import ImageClip
 from moviepy.video.VideoClip import TextClip, VideoClip
@@ -90,9 +91,9 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     final_clip = CompositeVideoClip([video_clip, cover_image_clip])
 
     # 添加人声和bgm
-    bgm_clip = AudioFileClip(bgm_path).set_duration(video_clip.duration)
+    bgm_clip = AudioFileClip(bgm_path)
     bgm_clip = audio_loop(bgm_clip, duration=video_clip.duration)
-    bgm_clip = bgm_clip.volumex(config["compose_params"]["bgm_volume"])
+    bgm_clip = bgm_clip.fx(volumex, config["compose_params"]["bgm_volume"])
     bgm_clip = audio_fadeout(bgm_clip, config["compose_params"]["bgm_fadeout_duration"])
 
     final_audio_clip = CompositeAudioClip([voice_clip, bgm_clip])

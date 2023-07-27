@@ -21,7 +21,7 @@ from moviepy.video.tools.subtitles import SubtitlesClip
 
 import conf
 from conf.config import logger, config, BASE_DIR
-from utils.audio_generation import Subtitle
+from utils.audio_generation import Subtitle, audio_normalize
 
 
 def get_file_type(file_path: str) -> str:
@@ -91,7 +91,9 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     final_clip = CompositeVideoClip([video_clip, cover_image_clip])
 
     # 添加人声和bgm
-    bgm_clip = AudioFileClip(bgm_path)
+    bgm_normalize_path = os.path.join(BASE_DIR, f"output/{os.path.basename(bgm_path)}")
+    bgm_normalize_path = audio_normalize(file_path=bgm_path, output_path=bgm_normalize_path)  # 归一化bgm音量，防止原声有大有小
+    bgm_clip = AudioFileClip(bgm_normalize_path)
     bgm_clip = audio_loop(bgm_clip, duration=video_clip.duration)
     bgm_clip = bgm_clip.fx(volumex, config["compose_params"]["bgm_volume"])
     bgm_clip = audio_fadeout(bgm_clip, config["compose_params"]["bgm_fadeout_duration"])

@@ -1,12 +1,13 @@
 import asyncio
-import random
+import os
 import re
 import textwrap
 from typing import List, Tuple, Dict
 
 import edge_tts
+from pydub import AudioSegment
 
-from conf.config import config, logger
+from conf.config import config, logger, BASE_DIR
 
 
 class Subtitle(object):
@@ -181,8 +182,33 @@ def text2audio(text: str, subtitle_voice: str, audio_output_path: str, subtitle_
     )
 
 
+def audio_normalize(file_path: str, output_path: str = None,
+                    target_dbfs_limit: int = config["compose_params"]["bgm_target_dbfs_limit"]) -> str:
+    """
+    音频的音强（分贝值）标准化
+    :param file_path: 音频全路径
+    :param output_path: 文件输出路径
+    :param target_dbfs_limit: 目标分贝限值
+    :return:
+    """
+    if not output_path:
+        file_path_without_extension, extension = os.path.splitext(file_path)
+        output_path = f"{file_path_without_extension}_normalize{extension}"
+
+    sound = AudioSegment.from_file(file_path)
+
+    diff_dbfs = target_dbfs_limit - sound.max_dBFS
+    normalized_sound = sound.apply_gain(diff_dbfs)
+
+    normalized_sound.export(output_path, format="mp3")
+    logger.info(f"音频标准化后路径：{output_path}")
+
+    return output_path
+
+
 def main():
-    pass
+    file_path = os.path.join(BASE_DIR, "example/1.mp3")
+    audio_normalize(file_path=file_path)
 
 
 if __name__ == "__main__":

@@ -144,9 +144,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     :param video_output_path: 视频输出路径
     :return:
     """
-    subtitle_file = subtitle_path.split('/')[-1]
+    subtitle_filename = os.path.basename(subtitle_path)
     # 获取视频画面素材
-    if subtitle_file not in conf.config.medias_used.keys():
+    if subtitle_filename not in conf.config.medias_used.keys():
         media_path = os.path.join(config["compose_params"]["media_root_path"], subtitle.metadata["media_path"])
 
         medias = list()
@@ -161,7 +161,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
             elif material_direction == "horizontal" and not is_vertical_material(str(file_path)):
                 medias.append(file_path)
 
-        conf.config.medias_used[f"{subtitle_file}"] = medias
+        conf.config.medias_used[f"{subtitle_filename}"] = medias
 
     video_final_duration = AudioFileClip(audio_path).duration  # 视频的最终时长
     video_current_duration = 0  # 视频的当前时长
@@ -169,13 +169,13 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     video_clips: List[ImageClip, VideoFileClip] = list()
 
     i = 1
-    while conf.config.medias_used[f"{subtitle_file}"]:
-        media_path = random.choice(conf.config.medias_used[f"{subtitle_file}"])
+    while conf.config.medias_used[f"{subtitle_filename}"]:
+        media_path = random.choice(conf.config.medias_used[f"{subtitle_filename}"])
 
         media_type = get_file_type(file_path=media_path)
 
         if media_type == "image":
-            conf.config.medias_used[f"{subtitle_file}"].remove(media_path)
+            conf.config.medias_used[f"{subtitle_filename}"].remove(media_path)
 
             if i == 1:
                 image_duration = random.uniform(config["compose_params"]["image_duration"]["min"],
@@ -214,7 +214,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
             video_clip = VideoFileClip(media_path)
             if i == 1:
                 if (video_clip.duration - conf.config.video_cut_points[f"{media_path}"]) <= video_left_duration:
-                    conf.config.medias_used.get(f"{subtitle_file}").remove(media_path)
+                    conf.config.medias_used.get(f"{subtitle_filename}").remove(media_path)
                     t_start = conf.config.video_cut_points[f"{media_path}"]
                     t_end = video_clip.duration
                     video_clip = video_clip.subclip(t_start, t_end)
@@ -254,7 +254,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                                             width=config["compose_params"]["background_width"],
                                             height=config["compose_params"]["background_height"])
 
-                    conf.config.medias_used.get(f"{subtitle_file}").remove(media_path)
+                    conf.config.medias_used.get(f"{subtitle_filename}").remove(media_path)
                     video_clips.append(video_clip)
                     video_current_duration += (video_clip.duration - cross_fade_duration)
                     video_left_duration = video_final_duration - video_current_duration

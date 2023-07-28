@@ -25,7 +25,7 @@
         "horizontal_material_width": 1080,
         "horizontal_material_height": 608,
         "cross_fade_duration": 0.5,
-        "bgm_volume": 0.5,
+        "bgm_volume": 0.3,
         "bgm_target_dbfs_limit": -10,
         "bgm_fadeout_duration": 2,
         "image_duration": {

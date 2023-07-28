@@ -160,7 +160,7 @@ def sync_generate_audios(text_list: List, subtitle_voice: str, audio_output_path
 
         results = loop.run_until_complete(asyncio.gather(*tasks))
         for result in results:
-            logger.info(f"生成路径：{result}")
+            logger.info(f"音频/字幕的生成路径：{result}")
     finally:
         loop.close()
 

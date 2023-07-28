@@ -138,6 +138,10 @@ def main():
             session: Dict = pickle.load(f, encoding='bytes')
         logger.warning(f"持久化文件内容：{session}")
 
+        res = input(f"本地已有持久化文件，是否继续【y/n】：")
+        if res.lower() != 'y':
+            return
+
         conf.config.video_cut_points = session.get("video_cut_points")
         conf.config.medias_used = session.get("medias_used")
 
@@ -157,9 +161,10 @@ def main():
             )
 
             # 持久化处理：成功的任务进行持久化
-            with open(persistent_file_path, 'rb+') as f:
-                logger.info(f"持久化任务：{task_name}")
+            logger.info(f"开始持久化任务：{task_name}")
+            with open(persistent_file_path, 'rb') as f:
                 session: Dict = pickle.load(f, encoding='bytes')
+            with open(persistent_file_path, 'wb') as f:
                 session["success_tasks"].append(task_name)
                 session["video_cut_points"] = conf.config.video_cut_points
                 session["medias_used"] = conf.config.medias_used

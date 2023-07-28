@@ -212,6 +212,15 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                 conf.config.video_cut_points[f"{media_path}"] = 0
 
             video_clip = VideoFileClip(media_path)
+
+            # 帧率不为整数的，移除有问题的视频
+            fps = video_clip.fps
+            if (fps - int(fps)) != 0:
+                logger.warning(f"！！！帧率不为整数，移除：{media_path}")
+                conf.config.medias_used[f"{subtitle_filename}"].remove(media_path)
+                video_clip.close()
+                continue
+
             if i == 1:
                 if (video_clip.duration - conf.config.video_cut_points[f"{media_path}"]) <= video_left_duration:
                     conf.config.medias_used.get(f"{subtitle_filename}").remove(media_path)

@@ -86,8 +86,10 @@ def combining_video(video_path_list: List[str], audio_path_list: List[str], subt
     # 加封面
     cover_image_clip = ImageClip(cover_path).set_duration(video_clip.duration)
     cover_image_clip = resize(cover_image_clip,
-                              width=config["compose_params"]["background_width"],
-                              height=config["compose_params"]["background_height"])
+                              newsize=(
+                                  config["compose_params"]["background_width"],
+                                  config["compose_params"]["background_height"])
+                              )
     final_clip = CompositeVideoClip([video_clip, cover_image_clip])
 
     # 添加人声和bgm
@@ -171,6 +173,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
     i = 1
     while conf.config.medias_used[f"{subtitle_filename}"]:
         media_path = random.choice(conf.config.medias_used[f"{subtitle_filename}"])
+        logger.info(f"选取的素材：{media_path}")
 
         media_type = get_file_type(file_path=media_path)
 
@@ -187,11 +190,17 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
 
             image_clip = ImageClip(media_path).set_duration(min(video_left_duration, image_duration))
             if material_direction == "horizontal":
-                image_clip = resize(clip=image_clip, width=config["compose_params"]["horizontal_material_width"],
-                                    height=config["compose_params"]["horizontal_material_height"])
+                image_clip = resize(clip=image_clip,
+                                    newsize=(
+                                        config["compose_params"]["horizontal_material_width"],
+                                        config["compose_params"]["horizontal_material_height"])
+                                    )
             else:
-                image_clip = resize(clip=image_clip, width=config["compose_params"]["background_width"],
-                                    height=config["compose_params"]["background_height"])
+                image_clip = resize(clip=image_clip,
+                                    newsize=(
+                                        config["compose_params"]["background_width"],
+                                        config["compose_params"]["background_height"])
+                                    )
 
             video_clips.append(image_clip)
             if i == 1:
@@ -216,7 +225,7 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
             # 帧率不为整数的，移除有问题的视频
             fps = video_clip.fps
             if (fps - int(fps)) != 0:
-                logger.warning(f"！！！帧率不为整数，移除：{media_path}")
+                logger.warning(f"！！！帧率 {fps} 不为整数，移除：{media_path}")
                 conf.config.medias_used[f"{subtitle_filename}"].remove(media_path)
                 video_clip.close()
                 continue
@@ -234,11 +243,17 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     conf.config.video_cut_points[f"{media_path}"] = conf.config.video_cut_points[f"{media_path}"] + video_left_duration
 
                 if material_direction == "horizontal":
-                    video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                        height=config["compose_params"]["horizontal_material_height"])
+                    video_clip = resize(clip=video_clip,
+                                        newsize=(
+                                            config["compose_params"]["horizontal_material_width"],
+                                            config["compose_params"]["horizontal_material_height"])
+                                        )
                 else:
-                    video_clip = resize(clip=video_clip, width=config["compose_params"]["background_width"],
-                                        height=config["compose_params"]["background_height"])
+                    video_clip = resize(clip=video_clip,
+                                        newsize=(
+                                            config["compose_params"]["background_width"],
+                                            config["compose_params"]["background_height"])
+                                        )
 
                 video_clips.append(video_clip)
                 video_current_duration += video_clip.duration
@@ -256,12 +271,17 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     video_clip = video_clip.subclip(t_start, t_end)
 
                     if material_direction == "horizontal":
-                        video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                            height=config["compose_params"]["horizontal_material_height"])
+                        video_clip = resize(clip=video_clip,
+                                            newsize=(
+                                                config["compose_params"]["horizontal_material_width"],
+                                                config["compose_params"]["horizontal_material_height"])
+                                            )
                     else:
                         video_clip = resize(clip=video_clip,
-                                            width=config["compose_params"]["background_width"],
-                                            height=config["compose_params"]["background_height"])
+                                            newsize=(
+                                                config["compose_params"]["background_width"],
+                                                config["compose_params"]["background_height"])
+                                            )
 
                     conf.config.medias_used.get(f"{subtitle_filename}").remove(media_path)
                     video_clips.append(video_clip)
@@ -279,12 +299,17 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
                     video_clip = video_clip.subclip(t_start, t_end)
 
                     if material_direction == "horizontal":
-                        video_clip = resize(clip=video_clip, width=config["compose_params"]["horizontal_material_width"],
-                                            height=config["compose_params"]["horizontal_material_height"])
+                        video_clip = resize(clip=video_clip,
+                                            newsize=(
+                                                config["compose_params"]["horizontal_material_width"],
+                                                config["compose_params"]["horizontal_material_height"])
+                                            )
                     else:
                         video_clip = resize(clip=video_clip,
-                                            width=config["compose_params"]["background_width"],
-                                            height=config["compose_params"]["background_height"])
+                                            newsize=(
+                                                config["compose_params"]["background_width"],
+                                                config["compose_params"]["background_height"])
+                                            )
 
                     conf.config.video_cut_points[f"{media_path}"] = conf.config.video_cut_points[
                                                             f"{media_path}"] + video_left_duration + cross_fade_duration

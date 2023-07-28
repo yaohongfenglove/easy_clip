@@ -131,7 +131,6 @@ def main():
                 "success_tasks": list(),
             }
             pickle.dump(session, f)
-        print(os.path.getsize(persistent_file_path))
     else:
         logger.warning(f"加载持久化文件：{persistent_file_path}")
         with open(persistent_file_path, 'rb') as f:

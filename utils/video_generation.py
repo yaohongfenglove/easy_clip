@@ -292,6 +292,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
         else:
             raise ValueError(f"不支持该类型的媒体文件：{media_path}")
 
+    if conf.config.medias_used[f"{subtitle_filename}"] == list():
+        raise IndexError(f"序列为空")
+
     # 合成视频
     video_clip = combining_video_within_cross_fade(video_clips, cross_fade_duration=cross_fade_duration)
 

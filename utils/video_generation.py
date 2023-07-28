@@ -301,6 +301,9 @@ def generate_video(subtitle: Subtitle, audio_path: str, subtitle_path: str, vide
         else:
             raise ValueError(f"不支持该类型的媒体文件：{media_path}")
 
+    if not (abs(video_final_duration - video_current_duration) < 0.01):
+        raise ValueError(f'字幕{subtitle_filename}的素材已使用完。')
+
     # 合成视频
     video_clip = combining_video_within_cross_fade(video_clips, cross_fade_duration=cross_fade_duration)
 

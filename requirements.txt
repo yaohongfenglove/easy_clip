@@ -1,4 +1,7 @@
 edge-tts==6.1.7
-moviepy==1.0.3
+moviepy==2.0.0.dev2
 pandas==2.0.3
 openpyxl==3.1.2
+Pillow==9.5.0
+opencv-python==4.8.0.74
+pydub==0.25.1

@@ -1,11 +1,13 @@
 import asyncio
+import os
 import re
 import textwrap
 from typing import List, Tuple, Dict
 
 import edge_tts
+from pydub import AudioSegment
 
-from conf.config import config, logger
+from conf.config import config, logger, BASE_DIR
 
 
 class Subtitle(object):
@@ -21,8 +23,7 @@ class Subtitle(object):
 
 def vtt_file_to_subtitles(file_path: str):
     """
-    Converts a .vvt file into .srt subtitles.
-    Only works for '.vvt' format for the moment.
+    将.vvt文件转换为.srt字幕。目前仅适用于“.vvt”格式。
     :param file_path: .vtt文件全路径
     :return:
     """
@@ -44,7 +45,7 @@ def vtt_file_to_subtitles(file_path: str):
     return times_texts
 
 
-def split_text(text: str, max_len: int = 15) -> List[str]:
+def split_text(text: str, max_len: int = config["compose_params"]["subtitle_length_limit"]) -> List[str]:
     """
     分割文本
     :param text: 待分割的文本
@@ -110,15 +111,17 @@ def format_subtitle_file(text, subtitle_input_path, subtitle_output_path):
         f.write(text_srt)
 
 
-async def generate_audio(text: str, audio_output_path: str, subtitle_output_path: str) -> Tuple:
+async def generate_audio(text: str, subtitle_voice: str, audio_output_path: str, subtitle_output_path: str) -> Tuple:
     """
-    本生成音频文件
+    文本生成音频文件
     :param text: 待转化为音频的文本
+    :param subtitle_voice: 字幕配音人
     :param audio_output_path: 音频输出的绝对路径，/xxx/xxx/xxx.mp3
     :param subtitle_output_path: 字幕输出的绝对路径，/xxx/xxx/xxx.srt
     :return:
     """
-    communicate = edge_tts.Communicate(text,  config["SUPPORTED_VOICES"]["1"])
+    communicate = edge_tts.Communicate(text, subtitle_voice)
+
     subtitle_maker = edge_tts.SubMaker()
     with open(audio_output_path, "wb") as file:
         async for chunk in communicate.stream():
@@ -135,10 +138,11 @@ async def generate_audio(text: str, audio_output_path: str, subtitle_output_path
     return audio_output_path, subtitle_output_path
 
 
-def sync_generate_audios(text_list: List, audio_output_path_list: List, subtitle_output_path_list: List) -> None:
+def sync_generate_audios(text_list: List, subtitle_voice: str, audio_output_path_list: List, subtitle_output_path_list: List) -> None:
     """
     批量文本生成音频文件
     :param text_list: 待转化为音频的文本列表
+    :param subtitle_voice: 字幕配音人
     :param audio_output_path_list: 音频输出的绝对路径列表，[/xxx/xxx/xxx.mp3, /xxx/xxx/aaa.mp3, ...]
     :param subtitle_output_path_list: srt字幕输出的绝对路径列表，[/xxx/xxx/xxx.srt, /xxx/xxx/aaa.srt, ...]
     :return:
@@ -152,32 +156,59 @@ def sync_generate_audios(text_list: List, audio_output_path_list: List, subtitle
 
         tasks = list()
         for i in range(len(text_list)):
-            tasks.append((lambda: generate_audio(text_list[i], audio_output_path_list[i], subtitle_output_path_list[i]))())
+            tasks.append((lambda: generate_audio(text_list[i], subtitle_voice, audio_output_path_list[i], subtitle_output_path_list[i]))())
 
         results = loop.run_until_complete(asyncio.gather(*tasks))
         for result in results:
-            logger.info(f"生成路径：{result}")
+            logger.info(f"音频/字幕的生成路径：{result}")
     finally:
         loop.close()
 
 
-def text2audio(text: str, audio_output_path: str, subtitle_output_path: str) -> None:
+def text2audio(text: str, subtitle_voice: str, audio_output_path: str, subtitle_output_path: str) -> None:
     """
     将文本转为音频
     :param text: 待转化的文本
+    :param subtitle_voice: 字幕配音人
     :param audio_output_path: 音频输出路径
     :param subtitle_output_path: srt字幕输出路径
     :return:
     """
     sync_generate_audios(
         text_list=[text, ],
+        subtitle_voice=subtitle_voice,
         audio_output_path_list=[audio_output_path, ],
         subtitle_output_path_list=[subtitle_output_path, ]
     )
 
 
+def audio_normalize(file_path: str, output_path: str = None,
+                    target_dbfs_limit: int = config["compose_params"]["bgm_target_dbfs_limit"]) -> str:
+    """
+    音频的音强（分贝值）标准化
+    :param file_path: 音频全路径
+    :param output_path: 文件输出路径
+    :param target_dbfs_limit: 目标分贝限值
+    :return:
+    """
+    if not output_path:
+        file_path_without_extension, extension = os.path.splitext(file_path)
+        output_path = f"{file_path_without_extension}_normalize{extension}"
+
+    sound = AudioSegment.from_file(file_path)
+
+    diff_dbfs = target_dbfs_limit - sound.max_dBFS
+    normalized_sound = sound.apply_gain(diff_dbfs)
+
+    normalized_sound.export(output_path, format="mp3")
+    logger.info(f"音频标准化后路径：{output_path}")
+
+    return output_path
+
+
 def main():
-    pass
+    file_path = os.path.join(BASE_DIR, "example/1.mp3")
+    audio_normalize(file_path=file_path)
 
 
 if __name__ == "__main__":

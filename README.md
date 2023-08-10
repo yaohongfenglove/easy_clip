@@ -32,6 +32,20 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+安装视频合成所需的ffmpeg和字幕合成所需的ImageMagick：
+
+```bash
+ffmpeg: 
+下载地址: https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z
+安装: 解压安装包后, 需要把bin路径添加到系统环境变量中, 这样系统才能找到ffmpeg.exe, ffprobe.exe和ffplay.exe.
+验证: 控制台敲ffmpeg.exe/ffprobe.exe/ffplay.exe看是否已安装成功
+
+ImageMagick: 
+下载地址: https://imagemagick.org/archive/binaries/ImageMagick-7.1.1-15-Q16-HDRI-x64-dll.exe
+安装: 安装过程记得勾选添加到环境变量
+验证: 控制台敲: magick.exe, 看是否已安装成功
+```
+
 ### 二.相关配置
 ```bash
 远程媒体路径: \\192.168.100.199\video_share
